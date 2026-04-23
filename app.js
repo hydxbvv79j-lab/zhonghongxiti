@@ -2,7 +2,23 @@ const questions = window.QUESTIONS;
 const list = document.querySelector("#quizList");
 const score = document.querySelector("#score");
 const chips = document.querySelectorAll(".chip");
+const markedCount = document.querySelector("#markedCount");
+const redoMarkedBtn = document.querySelector("#redoMarked");
 let currentChapter = "all";
+const STORAGE_KEY = "macro-quiz-marked";
+let marked = loadMarked();
+
+function loadMarked() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveMarked() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...marked]));
+}
 
 function optionText(q, label) {
   return q.options[label] || "";
@@ -11,13 +27,21 @@ function optionText(q, label) {
 function render() {
   const visible = currentChapter === "all"
     ? questions
+    : currentChapter === "marked"
+      ? questions.filter(q => marked.has(q.id))
     : questions.filter(q => q.chapter === currentChapter);
   score.textContent = `显示 ${visible.length} / ${questions.length} 题`;
+  markedCount.textContent = `已标记 ${marked.size} 题`;
   list.innerHTML = visible.map((q, idx) => `
-    <article class="question-card" data-id="${q.id}">
+    <article class="question-card ${marked.has(q.id) ? "marked" : ""}" data-id="${q.id}">
       <div class="meta">
         <span>${q.chapter} · 第 ${q.number} 题</span>
         <span>${idx + 1} / ${visible.length}</span>
+      </div>
+      <div class="card-actions">
+        <button class="mark-btn ${marked.has(q.id) ? "active" : ""}" type="button">
+          ${marked.has(q.id) ? "取消标记" : "标记本题"}
+        </button>
       </div>
       <p class="question">${escapeHtml(q.question)}</p>
       <fieldset class="options">
@@ -44,6 +68,25 @@ function escapeHtml(value) {
 }
 
 list.addEventListener("click", event => {
+  const markButton = event.target.closest(".mark-btn");
+  if (markButton) {
+    const card = markButton.closest(".question-card");
+    const id = card.dataset.id;
+    if (marked.has(id)) {
+      marked.delete(id);
+    } else {
+      marked.add(id);
+    }
+    saveMarked();
+    if (currentChapter === "marked" && !marked.has(id)) {
+      render();
+      return;
+    }
+    renderCardState(card, id);
+    markedCount.textContent = `已标记 ${marked.size} 题`;
+    return;
+  }
+
   const button = event.target.closest(".submit");
   if (!button) return;
   const card = button.closest(".question-card");
@@ -72,6 +115,14 @@ list.addEventListener("click", event => {
   `;
 });
 
+function renderCardState(card, id) {
+  const isMarked = marked.has(id);
+  card.classList.toggle("marked", isMarked);
+  const btn = card.querySelector(".mark-btn");
+  btn.classList.toggle("active", isMarked);
+  btn.textContent = isMarked ? "取消标记" : "标记本题";
+}
+
 chips.forEach(chip => {
   chip.addEventListener("click", () => {
     chips.forEach(item => item.classList.remove("active"));
@@ -80,6 +131,29 @@ chips.forEach(chip => {
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
+});
+
+redoMarkedBtn.addEventListener("click", () => {
+  if (!marked.size) {
+    alert("还没有标记题目。");
+    return;
+  }
+  document.querySelectorAll(".question-card").forEach(card => {
+    if (!marked.has(card.dataset.id)) return;
+    card.querySelectorAll("input[type='radio']").forEach(input => {
+      input.checked = false;
+    });
+    card.querySelectorAll(".option").forEach(option => {
+      option.classList.remove("correct", "incorrect");
+    });
+    const result = card.querySelector(".result");
+    result.className = "result";
+    result.innerHTML = "";
+  });
+  currentChapter = "marked";
+  chips.forEach(item => item.classList.toggle("active", item.dataset.chapter === "marked"));
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 render();

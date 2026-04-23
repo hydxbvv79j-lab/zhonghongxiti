@@ -94,11 +94,40 @@ main {
   gap: 14px;
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.secondary-btn {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.marked-count {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .question-card {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 18px;
+}
+
+.question-card.marked {
+  border-color: #f04438;
+  box-shadow: inset 0 0 0 1px #f04438;
 }
 
 .meta {
@@ -115,6 +144,29 @@ main {
   font-size: 17px;
   line-height: 1.55;
   font-weight: 700;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.mark-btn {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mark-btn.active {
+  background: #f04438;
+  border-color: #f04438;
+  color: #fff;
 }
 
 .options {
@@ -201,4 +253,8 @@ main {
   }
   h1 { font-size: 24px; }
   .question-card { padding: 14px; }
+  .actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
